@@ -1,5 +1,5 @@
 defmodule Teletype.Export do
-  alias Teletype.Slave
+  alias Teletype.Pts
 
   def start_link(tty, port) do
     Task.start_link(fn -> run(tty, port) end)
@@ -16,14 +16,14 @@ defmodule Teletype.Export do
 
     {:ok, listener} = :gen_tcp.listen(port, opts)
     {:ok, socket} = :gen_tcp.accept(listener)
-    port = Slave.open(tty)
+    port = Pts.open(tty)
     loop(listener, port, socket)
   end
 
   defp loop(listener, port, socket) do
     receive do
       {:tcp, _, data} ->
-        Slave.write!(port, data)
+        Pts.write!(port, data)
         loop(listener, port, socket)
 
       {^port, {:data, data}} ->

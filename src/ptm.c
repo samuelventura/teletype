@@ -50,11 +50,11 @@ static void signal_setup(int sig) {
 	if (sigaction(sig, &sa, 0)) crash("sigaction %d", sig);
 }
 
-//during development slave wont receive resize signal because it 
+//during development pts wont receive resize signal because it 
 //doesn't have a controlling tty, during production no resize
 //will be needed.
-//slave will need to update if resize signal is ever needed in 
-//the future and it is not paired with this devel master.
+//pts will need to update if resize signal is ever needed in 
+//the future and it is not paired with this devel ptm.
 void copy_size(int send) {
   struct winsize ts;
   if (ioctl(STDIN_FILENO, TIOCGWINSZ, &ts)) crash("ioctl TIOCGWINSZ %d", fd);
@@ -74,14 +74,14 @@ void make_raw(int fd) {
   if (tcsetattr(fd, TCSAFLUSH, &ts)) crash("tcsetattr %d", fd);
 }
 
-// master transmits the resize escape sequence so that the
-// development slave does not have to register a signal handler
+// ptm transmits the resize escape sequence so that the
+// development pts does not have to register a signal handler
 // which in turn requires ioctl(fd, TIOCSCTTY) which severes
-// the master pts on slave port exit.
-// cat and echo over the pts slave can reuse the same slave pts
-// (by keeping the slave device open from the master)
-// but 'mix run tryout/try_hello.exs', which talks to tty_slave
-// over an erlang port, puts the master pts on a unrecoverable
+// the ptm pts on pts port exit.
+// cat and echo over the pts pts can reuse the same pts pts
+// (by keeping the pts device open from the ptm)
+// but 'mix run tryout/try_hello.exs', which talks to tty_pts
+// over an erlang port, puts the ptm pts on a unrecoverable
 // state where select return immediately and read 0 bytes despite
 // fcntl(fd, F_GETFD) returning 0.
 int main(int argc, char *argv[]) {
@@ -90,18 +90,18 @@ int main(int argc, char *argv[]) {
   int rp[2];
   fd_set fds;
   unsigned char buf[256];
-  char *link = "/tmp/slave.pts";
+  char *link = "/tmp/teletype.pts";
   if (argc>1) link = argv[1];
   unlink(link);
   fd = posix_openpt(O_RDWR|O_NOCTTY);
-  if (fd<0) crash("open master %d", fd);
+  if (fd<0) crash("open ptm %d", fd);
   if (unlockpt(fd)) crash("unlockpt %d", fd);
   if (grantpt(fd)) crash("grantpt %d", fd);
   char * ptsn = ptsname(fd);
   if (symlink(ptsn, link)) crash("symlink");
-  //for slave reuse and stty changes preservation
+  //for pts reuse and stty changes preservation
   int sfd = open(ptsn, O_RDWR|O_NOCTTY);
-  if (sfd<0) crash("open slave %d", sfd);
+  if (sfd<0) crash("open pts %d", sfd);
   if (pipe(rp)) crash("pipe");
   pfd = rp[1];
   make_raw(STDIN_FILENO);

@@ -6,5 +6,6 @@ See [terminal](https://github.com/samuelventura/terminal) for a modern reactish 
 
 ## Future
 
-- NIF slave
+- NIF pts
 - TTY reset
+- PTS resize

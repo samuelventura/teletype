@@ -36,7 +36,7 @@ defmodule Teletype.MixProject do
   defp package do
     [
       name: :teletype,
-      files: ["lib", "test", "src", "mix.*", "*.exs", "*.md", ".gitignore", "LICENSE"],
+      files: ["lib", "test", "src", "scripts", "mix.*", "*.exs", "*.md", ".gitignore", "LICENSE"],
       maintainers: ["Samuel Ventura"],
       licenses: ["MIT"],
       links: %{"GitHub" => "https://github.com/samuelventura/teletype/"}

@@ -1,26 +1,24 @@
 defmodule Teletype.Tty do
-  alias Teletype.Slave
+  alias Teletype.Pts
 
   def open(opts \\ []) do
-    tty = Teletype.Nif.ttypath()
-    tty = Keyword.get(opts, :tty, tty)
-    Slave.open(tty)
+    Pts.open(opts)
   end
 
   def handle(port, {port, {:data, data}}), do: {port, true, data}
   def handle(port, _), do: {port, false}
 
   def write!(port, data) do
-    Slave.write!(port, data)
+    Pts.write!(port, data)
     port
   end
 
   def read!(port) do
-    data = Slave.read!(port)
+    data = Pts.read!(port)
     {port, data}
   end
 
   def close(port) do
-    Slave.close(port)
+    Pts.close(port)
   end
 end
