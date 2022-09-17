@@ -43,8 +43,9 @@ void make_raw(int fd) {
 int main(int argc, char *argv[]) {
   unsigned char buf[256];
   fd_set fds;
-  if (argc < 2) crash("argc %d", argc);
-  int fd = open(argv[1], O_RDWR|O_NOCTTY);
+  const char* ttypath = argc < 2? ttyname(0) : argv[1];
+  if (ttypath==NULL) crash("ttypath NULL");
+  int fd = open(ttypath, O_RDWR|O_NOCTTY);
   if (fd<0) crash("open %d", fd);
   make_raw(fd);
   int max = MAX(fd, STDIN_FILENO);

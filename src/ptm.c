@@ -7,7 +7,6 @@
 #include <string.h>
 #include <termios.h>
 #include <signal.h>
-#include <pthread.h>
 #include <stdarg.h>
 #include <sys/ioctl.h>
 #include <sys/select.h>

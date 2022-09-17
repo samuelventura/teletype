@@ -6,6 +6,14 @@ See [terminal](https://github.com/samuelventura/terminal) for a modern reactish 
 
 ## Future
 
-- NIF pts
+- NIF ptc
 - TTY reset
-- PTS resize
+- PTC resize
+
+## Issues
+
+- ttyname(0) works from a nif
+- ttyname(0) fails from a port (NULL)
+- ports fail to acquire a controlling tty
+- ports fail to receive SIGWINCH signals
+- ports fail to become session leaders (setsid)

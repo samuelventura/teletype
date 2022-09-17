@@ -1,4 +1,4 @@
-#mix run scripts/keymon.exs
+#mix run scripts/kmpts.exs
 #exit with Ctrl+c
 
 alias Teletype.Pts

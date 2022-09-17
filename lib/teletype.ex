@@ -6,11 +6,8 @@ defmodule Teletype do
     {_, 0} = System.cmd("#{exec}", ["chvt", "#{tn}"])
   end
 
-  # c lang ttyname() fails from within the beam
-  # priv/tty name works from bash
   def name() do
     exec = :code.priv_dir(:teletype) ++ '/tty'
-    IO.inspect(exec)
 
     case System.cmd("#{exec}", ["name"]) do
       {ttyname, 0} -> {:ok, ttyname}

@@ -36,13 +36,15 @@ void crash(const char* fmt, ...) {
 int name(int argc, char *argv[]) {
   UNUSED(argc);
   UNUSED(argv);
-  printf("%s\n", ttyname(0));
-  return 0;
+  const char *ttypath = ttyname(0);
+  printf("%s\n", ttypath==NULL? "NULL" : ttypath);
+  return ttypath==NULL? -1 : 0;
 }
 
 int raw(int argc, char *argv[]) {
   UNUSED(argc);
   const char *ttypath = argc < 3? ttyname(0) : argv[2];
+  if (ttypath==NULL) crash("ttypath NULL");
   int fd = open(ttypath, O_RDWR|O_NOCTTY);
   if (fd<0) crash("open %s", ttypath);
   struct termios ts;
@@ -61,6 +63,7 @@ int raw(int argc, char *argv[]) {
 int reset(int argc, char *argv[]) {
   UNUSED(argc);
   const char *ttypath = argc < 3? ttyname(0) : argv[2];
+  if (ttypath==NULL) crash("ttypath NULL");
   int fd = posix_openpt(O_RDWR|O_NOCTTY);
   struct termios ts;
   if (tcgetattr(fd, &ts)) crash("tcgetattr %s", ttypath);
