@@ -1,7 +1,6 @@
 defmodule Teletype.Pts do
   def open(opts \\ []) do
-    tty = Teletype.Nif.ttypath()
-    tty = Keyword.get(opts, :tty, tty)
+    tty = Keyword.get_lazy(opts, :tty, &Teletype.Nif.ttypath/0)
     exec = :code.priv_dir(:teletype) ++ '/pts'
     opts = [:binary, :exit_status, :stream, args: [tty]]
     Port.open({:spawn_executable, exec}, opts)

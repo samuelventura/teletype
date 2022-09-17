@@ -2,4 +2,4 @@
 
 alias Teletype.Nif
 
-:ok = Nif.ttyraw(Nif.ttypath())
+:ok = Nif.ttyraw()

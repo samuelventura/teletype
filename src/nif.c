@@ -1,24 +1,65 @@
 #include "erl_nif.h"
 #include <unistd.h>
 #include <fcntl.h>
+#include <signal.h>
+#include <string.h>
 #include <termios.h>
 
 #define UNUSED(x) (void)(x)
+ErlNifMutex *mutex = NULL;
+ErlNifPid pid;
+
+static void signal_handler(int sig) {
+  switch(sig) {
+    case SIGWINCH:
+    enif_mutex_lock(mutex);
+    enif_send(NULL, &pid, NULL, enif_make_atom(NULL, "SIGWINCH"));
+    enif_mutex_unlock(mutex);
+    break;
+  }
+}
+
+static int load(ErlNifEnv *env, void **priv, ERL_NIF_TERM load_info) {
+  UNUSED(env);
+  UNUSED(priv);
+  UNUSED(load_info);
+  mutex = enif_mutex_create("SIGWINCH");
+  enif_set_pid_undefined(&pid);
+  return 0;
+}
+
+static ERL_NIF_TERM nif_ttysignal(ErlNifEnv *env, int argc, const ERL_NIF_TERM argv[]) {
+  UNUSED(argc);
+  UNUSED(argv);
+  enif_mutex_lock(mutex);
+  int undefined = enif_is_pid_undefined(&pid);
+  if (!enif_self(env, &pid)) {
+    enif_mutex_unlock(mutex);
+    return enif_make_tuple2(
+        env, enif_make_atom(env, "er"),
+        enif_make_string(env, "enif_self failed", ERL_NIF_LATIN1));
+  }
+  if (undefined) {
+    struct sigaction sa;
+    memset(&sa, 0, sizeof(sa));
+    sa.sa_handler = signal_handler;
+    sa.sa_flags = 0;
+    if (sigaction(SIGWINCH, &sa, 0)) {
+      enif_mutex_unlock(mutex);
+      return enif_make_tuple2(
+          env, enif_make_atom(env, "er"),
+          enif_make_string(env, "sigaction failed", ERL_NIF_LATIN1));
+    }
+  }
+  enif_mutex_unlock(mutex);
+  return enif_make_atom(env, "ok");
+}
 
 static ERL_NIF_TERM nif_ttyraw(ErlNifEnv *env, int argc, const ERL_NIF_TERM argv[]) {
-  if (argc != 1) {
-    return enif_make_tuple2(
-        env, enif_make_atom(env, "er"),
-        enif_make_string(env, "Invalid argument count", ERL_NIF_LATIN1));
-  }
-  ErlNifBinary device;
-  if (!enif_inspect_binary(env, argv[0], &device)) {
-    return enif_make_tuple2(
-        env, enif_make_atom(env, "er"),
-        enif_make_string(env, "Argument 0 is not a binary", ERL_NIF_LATIN1));
-  }  
-  const char *ttyname = (const char *)device.data;
-  int fd = open(ttyname, O_RDWR|O_NOCTTY);
+  UNUSED(argc);
+  UNUSED(argv);
+  const char *ttypath = ttyname(0);
+  int fd = open(ttypath, O_RDWR|O_NOCTTY);
   if (fd<0) {
     return enif_make_tuple2(
         env, enif_make_atom(env, "er"),
@@ -50,17 +91,8 @@ static ERL_NIF_TERM nif_ttyraw(ErlNifEnv *env, int argc, const ERL_NIF_TERM argv
 }
 
 static ERL_NIF_TERM nif_ttyreset(ErlNifEnv *env, int argc, const ERL_NIF_TERM argv[]) {
-  if (argc != 1) {
-    return enif_make_tuple2(
-        env, enif_make_atom(env, "er"),
-        enif_make_string(env, "Invalid argument count", ERL_NIF_LATIN1));
-  }
-  ErlNifBinary device;
-  if (!enif_inspect_binary(env, argv[0], &device)) {
-    return enif_make_tuple2(
-        env, enif_make_atom(env, "er"),
-        enif_make_string(env, "Argument 0 is not a binary", ERL_NIF_LATIN1));
-  }  
+  UNUSED(argc);
+  UNUSED(argv);
   int fd = posix_openpt(O_RDWR|O_NOCTTY);
   struct termios ts;
   if (tcgetattr(fd, &ts)) {
@@ -73,13 +105,13 @@ static ERL_NIF_TERM nif_ttyreset(ErlNifEnv *env, int argc, const ERL_NIF_TERM ar
         env, enif_make_atom(env, "er"),
         enif_make_string(env, "close1 failed", ERL_NIF_LATIN1));
   }
-  const char *ttyname = (const char *)device.data;
-  fd = open(ttyname, O_RDWR|O_NOCTTY);
+  const char *ttypath = ttyname(0);
+  fd = open(ttypath, O_RDWR|O_NOCTTY);
   if (fd<0) {
     return enif_make_tuple2(
         env, enif_make_atom(env, "er"),
         enif_make_string(env, "open failed", ERL_NIF_LATIN1));
-  }  
+  }
   if (tcsetattr(fd, TCSAFLUSH, &ts)) {
     return enif_make_tuple2(
         env, enif_make_atom(env, "er"),
@@ -100,9 +132,10 @@ static ERL_NIF_TERM nif_ttyname(ErlNifEnv *env, int argc, const ERL_NIF_TERM arg
 }
 
 static ErlNifFunc nif_funcs[] = {
-  {"ttyreset", 1, nif_ttyreset, 0},
+  {"ttysignal", 0, nif_ttysignal, 0},
+  {"ttyreset", 0, nif_ttyreset, 0},
   {"ttyname", 0, nif_ttyname, 0},
-  {"ttyraw", 1, nif_ttyraw, 0},
+  {"ttyraw", 0, nif_ttyraw, 0},
 };
 
-ERL_NIF_INIT(Elixir.Teletype.Nif, nif_funcs, NULL, NULL, NULL, NULL)
+ERL_NIF_INIT(Elixir.Teletype.Nif, nif_funcs, &load, NULL, NULL, NULL)
