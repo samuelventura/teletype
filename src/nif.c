@@ -112,7 +112,16 @@ static ERL_NIF_TERM nif_ttyreset(ErlNifEnv *env, int argc, const ERL_NIF_TERM ar
         env, enif_make_atom(env, "er"),
         enif_make_string(env, "open failed", ERL_NIF_LATIN1));
   }
+  //reset mouse configuration
+  const char reset[2] = {(char)0x1b, 'c'};
+  if (write(fd, reset, 2)!=2) {
+    close(fd);
+    return enif_make_tuple2(
+        env, enif_make_atom(env, "er"),
+        enif_make_string(env, "write failed", ERL_NIF_LATIN1));
+  }
   if (tcsetattr(fd, TCSAFLUSH, &ts)) {
+    close(fd);
     return enif_make_tuple2(
         env, enif_make_atom(env, "er"),
         enif_make_string(env, "tcsetattr failed", ERL_NIF_LATIN1));
