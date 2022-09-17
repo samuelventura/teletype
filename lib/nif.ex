@@ -13,4 +13,12 @@ defmodule Teletype.Nif do
   def ttyname() do
     :erlang.nif_error("NIF library not loaded")
   end
+
+  def ttyreset(_path) do
+    :erlang.nif_error("NIF library not loaded")
+  end
+
+  def ttyraw(_path) do
+    :erlang.nif_error("NIF library not loaded")
+  end
 end

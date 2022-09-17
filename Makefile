@@ -11,10 +11,10 @@ MIX_TARGET ?= host
 C_CFLAGS = -g -O3 -Werror -pedantic -Wall -Wextra -D_XOPEN_SOURCE=700
 C_LDFLAGS = -fPIC
 
-CH_TARGET = $(DSTDIR)/chvt
-CH_SOURCES = $(SRCDIR)/chvt.c
-CH_CFLAGS = $(C_CFLAGS)
-CH_LDFLAGS= $(C_LDFLAGS)
+TTY_TARGET = $(DSTDIR)/tty
+TTY_SOURCES = $(SRCDIR)/tty.c
+TTY_CFLAGS = $(C_CFLAGS)
+TTY_LDFLAGS= $(C_LDFLAGS)
 
 PTS_TARGET = $(DSTDIR)/pts
 PTS_SOURCES = $(SRCDIR)/pts.c
@@ -26,24 +26,24 @@ PTM_SOURCES = $(SRCDIR)/ptm.c
 PTM_CFLAGS = $(C_CFLAGS)
 PTM_LDFLAGS= $(C_LDFLAGS)
 
-N_TARGET = $(DSTDIR)/nif.so
-N_SOURCES = $(SRCDIR)/nif.c
-N_CFLAGS = $(C_CFLAGS) -I$(ERTS_INCLUDE_DIR) 
-N_LDFLAGS= $(C_LDFLAGS) -shared
+NIF_TARGET = $(DSTDIR)/nif.so
+NIF_SOURCES = $(SRCDIR)/nif.c
+NIF_CFLAGS = $(C_CFLAGS) -I$(ERTS_INCLUDE_DIR) 
+NIF_LDFLAGS= $(C_LDFLAGS) -shared
 
 ifeq ($(MIX_TARGET),host)
 ifeq ($(UNAME),Darwin)
 PTS_CFLAGS += -D_DARWIN_C_SOURCE
 PTM_CFLAGS += -D_DARWIN_C_SOURCE
-CH_CFLAGS += -D_DARWIN_C_SOURCE
-N_CFLAGS += -D_DARWIN_C_SOURCE
-N_LDFLAGS = -undefined dynamic_lookup -dynamiclib
+TTY_CFLAGS += -D_DARWIN_C_SOURCE
+NIF_CFLAGS += -D_DARWIN_C_SOURCE
+NIF_LDFLAGS = -undefined dynamic_lookup -dynamiclib
 endif
 endif
 
 .PHONY: all clean
 
-all: $(CH_TARGET) $(PTS_TARGET) $(PTM_TARGET) $(N_TARGET)
+all: $(TTY_TARGET) $(PTS_TARGET) $(PTM_TARGET) $(NIF_TARGET)
 
 $(PTS_TARGET): $(PTS_SOURCES) 
 	[ -d $(DSTDIR) ] || mkdir -p $(DSTDIR)
@@ -55,14 +55,14 @@ $(PTM_TARGET): $(PTM_SOURCES)
 	$(CC) $(PTM_CFLAGS) $(PTM_SOURCES) -o $@ $(PTM_LDFLAGS)
 	rm -fR $(DSTDIR)/*.dSYM
 
-$(CH_TARGET): $(CH_SOURCES) 
+$(TTY_TARGET): $(TTY_SOURCES) 
 	[ -d $(DSTDIR) ] || mkdir -p $(DSTDIR)
-	$(CC) $(CH_CFLAGS) $(CH_SOURCES) -o $@ $(CH_LDFLAGS)
+	$(CC) $(TTY_CFLAGS) $(TTY_SOURCES) -o $@ $(TTY_LDFLAGS)
 	rm -fR $(DSTDIR)/*.dSYM
 	
-$(N_TARGET): $(N_SOURCES)
+$(NIF_TARGET): $(NIF_SOURCES)
 	[ -d $(DSTDIR) ] || mkdir -p $(DSTDIR)
-	$(CC) $(N_CFLAGS) $(N_SOURCES) -o $@ $(N_LDFLAGS)
+	$(CC) $(NIF_CFLAGS) $(NIF_SOURCES) -o $@ $(NIF_LDFLAGS)
 	rm -fR $(DSTDIR)/*.dSYM
 
 # macos generates folders priv/TARGET.dSYM
