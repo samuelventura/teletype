@@ -1,5 +1,6 @@
 #mix run scripts/ttyname.exs
 
-alias Teletype.Nif
-
-Nif.ttyname() |> IO.puts
+#c lang ttyname() fails from within the beam
+#priv/tty name works from bash
+{:ok, name} = Teletype.name()
+name |> IO.puts

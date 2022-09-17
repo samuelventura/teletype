@@ -11,4 +11,4 @@ Enum.any?(Stream.cycle(0..1), fn _ ->
   data == <<3>>
 end)
 
-System.cmd "reset", []
+Teletype.reset()
