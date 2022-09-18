@@ -1,16 +1,17 @@
 defmodule Teletype.Pts do
+  alias Teletype.Nif
+
   def open(opts \\ []) do
-    tty = Keyword.get_lazy(opts, :tty, &Teletype.Nif.ttypath/0)
+    nif = Nif.ttypath()
+    tty = Keyword.get(opts, :tty, nif)
     exec = :code.priv_dir(:teletype) ++ '/pts'
     opts = [:binary, :exit_status, :stream, args: [tty]]
-    Port.open({:spawn_executable, exec}, opts)
+    port = Port.open({:spawn_executable, exec}, opts)
+    if tty == nif, do: Nif.ttysignal()
+    {port, tty == nif}
   end
 
-  def close(port) do
-    Port.close(port)
-  end
-
-  def read!(port) do
+  def read!({port, _}) do
     receive do
       {^port, {:data, data}} ->
         data
@@ -20,7 +21,12 @@ defmodule Teletype.Pts do
     end
   end
 
-  def write!(port, data) do
+  def write!({port, _}, data) do
     true = Port.command(port, data)
+  end
+
+  def close({port, reset}) do
+    Port.close(port)
+    if reset, do: Nif.ttyreset()
   end
 end

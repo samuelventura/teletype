@@ -10,5 +10,4 @@ Enum.any?(Stream.cycle(0..1), fn _ ->
   IO.puts("#{inspect(data)}\r")
   data == <<3>>
 end)
-
-Teletype.reset()
+Pts.close(pts)
