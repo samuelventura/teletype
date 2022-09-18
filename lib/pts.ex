@@ -25,6 +25,9 @@ defmodule Teletype.Pts do
     true = Port.command(port, data)
   end
 
+  def handle({port, _} = pts, {port, {:data, data}}), do: {pts, true, data}
+  def handle(pts, _), do: {pts, false}
+
   def close({port, reset}) do
     Port.close(port)
     if reset, do: Nif.ttyreset()
