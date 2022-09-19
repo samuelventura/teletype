@@ -94,6 +94,11 @@ static ERL_NIF_TERM nif_ttyreset(ErlNifEnv *env, int argc, const ERL_NIF_TERM ar
   UNUSED(argc);
   UNUSED(argv);
   int fd = posix_openpt(O_RDWR|O_NOCTTY);
+  if (fd<0) {
+    return enif_make_tuple2(
+        env, enif_make_atom(env, "er"),
+        enif_make_string(env, "open1 failed", ERL_NIF_LATIN1));
+  }
   struct termios ts;
   if (tcgetattr(fd, &ts)) {
     return enif_make_tuple2(
@@ -110,7 +115,7 @@ static ERL_NIF_TERM nif_ttyreset(ErlNifEnv *env, int argc, const ERL_NIF_TERM ar
   if (fd<0) {
     return enif_make_tuple2(
         env, enif_make_atom(env, "er"),
-        enif_make_string(env, "open failed", ERL_NIF_LATIN1));
+        enif_make_string(env, "open2 failed", ERL_NIF_LATIN1));
   }
   //reset mouse configuration
   const char reset[2] = {(char)0x1b, 'c'};
