@@ -29,7 +29,12 @@ defmodule Teletype.Pts do
   def handle(pts, _), do: {pts, false}
 
   def close({port, reset}) do
-    Port.close(port)
-    if reset, do: Nif.ttyreset()
+    # exception if port native process has died
+    # ** (ArgumentError) argument error :erlang.port_close(#Port<0.6>)
+    try do
+      Port.close(port)
+    after
+      if reset, do: Nif.ttyreset()
+    end
   end
 end
