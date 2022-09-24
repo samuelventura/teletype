@@ -3,6 +3,16 @@ defmodule Teletype.Tcp do
 
   @toms 2_000
 
+  def child_spec(opts \\ []) do
+    %{
+      id: __MODULE__,
+      start: {__MODULE__, :start_link, [opts]},
+      restart: :permanent,
+      type: :worker,
+      shutdown: 500
+    }
+  end
+
   def start_link(opts \\ []) do
     Task.start_link(fn -> start(opts) end)
   end
