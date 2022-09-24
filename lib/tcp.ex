@@ -10,8 +10,6 @@ defmodule Teletype.Tcp do
   def start(opts) do
     {port, opts} = Keyword.pop!(opts, :port)
 
-    pts = Pts.open(opts)
-
     tcp_opts = [
       :binary,
       ip: {0, 0, 0, 0},
@@ -22,6 +20,7 @@ defmodule Teletype.Tcp do
 
     {:ok, listener} = :gen_tcp.listen(port, tcp_opts)
     {:ok, socket} = :gen_tcp.accept(listener)
+    pts = Pts.open(opts)
     loop(listener, pts, socket, listener, port)
   end
 
@@ -40,6 +39,9 @@ defmodule Teletype.Tcp do
 
   defp loop(listener, pts, socket, listener, port) do
     receive do
+      :SIGWINCH ->
+        loop(listener, pts, socket, listener, port)
+
       {:stop, pid} ->
         :gen_tcp.close(socket)
         :gen_tcp.close(listener)
