@@ -1,4 +1,4 @@
-#mix run scripts/nifreset.exs
+# mix run exs/nifreset.exs
 
 alias Teletype.Nif
 

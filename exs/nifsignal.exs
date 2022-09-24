@@ -1,4 +1,4 @@
-#mix run scripts/nifsignal.exs
+# mix run exs/nifsignal.exs
 
 alias Teletype.Nif
 
