@@ -1,6 +1,5 @@
-defmodule TeletypeTest do
+defmodule PtsTest do
   use ExUnit.Case
-  doctest Teletype
   alias Teletype.Pts
 
   test "pts basic check" do
@@ -19,5 +18,6 @@ defmodule TeletypeTest do
 
     :ok = :exec.send(stdin, "pong")
     "pong" = Pts.read!(port)
+    Pts.close(port)
   end
 end

@@ -1,30 +1,16 @@
-defmodule Teletype.Export do
+defmodule Teletype.Tcp do
   alias Teletype.Pts
 
+  @toms 2_000
+
   def start_link(opts \\ []) do
-    pid = self()
-    {:ok, pid} = Task.start_link(fn -> run(pid, opts) end)
-
-    receive do
-      {^pid, :port, port} -> {:ok, pid, port}
-    end
+    Task.start_link(fn -> start(opts) end)
   end
 
-  def stop(pid, toms \\ 1000) do
-    send(pid, {:stop, self()})
+  def start(opts) do
+    {port, opts} = Keyword.pop!(opts, :port)
 
-    receive do
-      :stop -> :stop
-    after
-      toms ->
-        Process.unlink(pid)
-        Process.exit(pid, :kill)
-        :kill
-    end
-  end
-
-  defp run(pid, opts) do
-    {port, opts} = Keyword.pop(opts, :pts, 0)
+    pts = Pts.open(opts)
 
     tcp_opts = [
       :binary,
@@ -35,11 +21,21 @@ defmodule Teletype.Export do
     ]
 
     {:ok, listener} = :gen_tcp.listen(port, tcp_opts)
-    {:ok, {_ip, port}} = :inet.sockname(listener)
-    send(pid, {self(), :port, port})
     {:ok, socket} = :gen_tcp.accept(listener)
-    pts = Pts.open(opts)
     loop(listener, pts, socket, listener, port)
+  end
+
+  def stop(pid, toms \\ @toms) do
+    send(pid, {:stop, self()})
+
+    receive do
+      :stop -> :ok
+    after
+      toms ->
+        Process.unlink(pid)
+        Process.exit(pid, :kill)
+        {:error, :timeout}
+    end
   end
 
   defp loop(listener, pts, socket, listener, port) do
