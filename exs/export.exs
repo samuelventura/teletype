@@ -6,5 +6,7 @@ alias Teletype.Nif
 
 {:ok, _} = Tcp.start_link(port: 8010)
 IO.puts("Exporting #{Nif.ttyname()} to port 8010")
-IO.puts("Press ENTER to exit")
-IO.read(:line)
+
+receive do
+  {:EXIT, _, _} -> nil
+end

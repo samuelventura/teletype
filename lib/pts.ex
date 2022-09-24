@@ -25,14 +25,21 @@ defmodule Teletype.Pts do
     true = Port.command(port, data)
   end
 
-  def handle({port, _} = pts, {port, {:data, data}}), do: {pts, true, data}
+  # {#Port<0.10>, {:exit_status, 143}}
+  # {#Port<0.10>, {:data, <<>>}}
+  def handle({port, _} = pts, {port, {:exit_status, _}}), do: {pts, :exit}
+  def handle({port, _} = pts, {port, {:data, data}}), do: {pts, :data, data}
   def handle(pts, _), do: {pts, false}
 
   def close({port, reset}) do
     # exception if port native process has died
     # ** (ArgumentError) argument error :erlang.port_close(#Port<0.6>)
+    # let the user choose to assert :ok = to except on close error
     try do
-      Port.close(port)
+      true = Port.close(port)
+      :ok
+    rescue
+      e -> {:error, e}
     after
       if reset, do: Nif.ttyreset()
     end

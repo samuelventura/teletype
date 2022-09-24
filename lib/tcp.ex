@@ -61,7 +61,14 @@ defmodule Teletype.Tcp do
 
       msg ->
         case Pts.handle(pts, msg) do
-          {pts, true, data} ->
+          {pts, :exit} ->
+            :gen_tcp.close(socket)
+            Pts.close(pts)
+            {:ok, socket} = :gen_tcp.accept(listener)
+            pts = Pts.open(opts)
+            loop(listener, pts, opts, socket, listener, port)
+
+          {pts, :data, data} ->
             :gen_tcp.send(socket, data)
             loop(listener, pts, opts, socket, listener, port)
 
