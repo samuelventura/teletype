@@ -24,7 +24,6 @@ defmodule Teletype.MixProject do
   defp deps do
     [
       {:elixir_make, "~> 0.6", runtime: false},
-      {:credo, "~> 1.6", only: [:dev, :test], runtime: false},
       {:erlexec, "~> 1.0", only: [:dev, :test], runtime: false}
     ]
   end
