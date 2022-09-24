@@ -21,7 +21,7 @@ defmodule Teletype.Tcp do
     {:ok, listener} = :gen_tcp.listen(port, tcp_opts)
     {:ok, socket} = :gen_tcp.accept(listener)
     pts = Pts.open(opts)
-    loop(listener, pts, socket, listener, port)
+    loop(listener, pts, opts, socket, listener, port)
   end
 
   def stop(pid, toms \\ @toms) do
@@ -37,10 +37,11 @@ defmodule Teletype.Tcp do
     end
   end
 
-  defp loop(listener, pts, socket, listener, port) do
+  # wont process messages during accept waits
+  defp loop(listener, pts, opts, socket, listener, port) do
     receive do
       :SIGWINCH ->
-        loop(listener, pts, socket, listener, port)
+        loop(listener, pts, opts, socket, listener, port)
 
       {:stop, pid} ->
         :gen_tcp.close(socket)
@@ -50,17 +51,19 @@ defmodule Teletype.Tcp do
 
       {:tcp, _, data} ->
         Pts.write!(pts, data)
-        loop(listener, pts, socket, listener, port)
+        loop(listener, pts, opts, socket, listener, port)
 
       {:tcp_closed, _} ->
+        Pts.close(pts)
         {:ok, socket} = :gen_tcp.accept(listener)
-        loop(listener, pts, socket, listener, port)
+        pts = Pts.open(opts)
+        loop(listener, pts, opts, socket, listener, port)
 
       msg ->
         case Pts.handle(pts, msg) do
           {pts, true, data} ->
             :gen_tcp.send(socket, data)
-            loop(listener, pts, socket, listener, port)
+            loop(listener, pts, opts, socket, listener, port)
 
           _ ->
             raise "#{inspect(msg)}"

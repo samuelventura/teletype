@@ -67,6 +67,7 @@ static ERL_NIF_TERM nif_ttyraw(ErlNifEnv *env, int argc, const ERL_NIF_TERM argv
   }
   struct termios ts;
   if (tcgetattr(fd, &ts)) {
+    close(fd);
     return enif_make_tuple2(
         env, enif_make_atom(env, "er"),
         enif_make_string(env, "tcgetattr failed", ERL_NIF_LATIN1));
@@ -78,6 +79,7 @@ static ERL_NIF_TERM nif_ttyraw(ErlNifEnv *env, int argc, const ERL_NIF_TERM argv
   ts.c_cflag &= ~(CSIZE | PARENB);
   ts.c_cflag |= CS8;
   if (tcsetattr(fd, TCSAFLUSH, &ts)) {
+    close(fd);
     return enif_make_tuple2(
         env, enif_make_atom(env, "er"),
         enif_make_string(env, "tcsetattr failed", ERL_NIF_LATIN1));
@@ -99,23 +101,52 @@ static ERL_NIF_TERM nif_ttyreset(ErlNifEnv *env, int argc, const ERL_NIF_TERM ar
         env, enif_make_atom(env, "er"),
         enif_make_string(env, "open1 failed", ERL_NIF_LATIN1));
   }
+  if (unlockpt(fd)) {
+    close(fd);
+    return enif_make_tuple2(
+        env, enif_make_atom(env, "er"),
+        enif_make_string(env, "unlockpt failed", ERL_NIF_LATIN1));
+  }
+  if (grantpt(fd)) {
+    close(fd);
+    return enif_make_tuple2(
+        env, enif_make_atom(env, "er"),
+        enif_make_string(env, "grantpt failed", ERL_NIF_LATIN1));
+  }
+  char * ptsn = ptsname(fd);
+  int sfd = open(ptsn, O_RDWR|O_NOCTTY);
+  if (sfd<0) {
+    close(fd);
+    return enif_make_tuple2(
+        env, enif_make_atom(env, "er"),
+        enif_make_string(env, "open2 failed", ERL_NIF_LATIN1));
+  }
+  //tcgetattr fails on master on macos
   struct termios ts;
-  if (tcgetattr(fd, &ts)) {
+  if (tcgetattr(sfd, &ts)) {
+    close(sfd);
+    close(fd);
     return enif_make_tuple2(
         env, enif_make_atom(env, "er"),
         enif_make_string(env, "tcgetattr failed", ERL_NIF_LATIN1));
   }
-  if (close(fd)) {
+  if (close(sfd)) {
+    close(fd);
     return enif_make_tuple2(
         env, enif_make_atom(env, "er"),
         enif_make_string(env, "close1 failed", ERL_NIF_LATIN1));
+  }
+  if (close(fd)) {
+    return enif_make_tuple2(
+        env, enif_make_atom(env, "er"),
+        enif_make_string(env, "close2 failed", ERL_NIF_LATIN1));
   }
   const char *ttypath = ttyname(0);
   fd = open(ttypath, O_RDWR|O_NOCTTY);
   if (fd<0) {
     return enif_make_tuple2(
         env, enif_make_atom(env, "er"),
-        enif_make_string(env, "open2 failed", ERL_NIF_LATIN1));
+        enif_make_string(env, "open3 failed", ERL_NIF_LATIN1));
   }
   //reset mouse configuration
   const char reset[2] = {(char)0x1b, 'c'};
@@ -134,7 +165,7 @@ static ERL_NIF_TERM nif_ttyreset(ErlNifEnv *env, int argc, const ERL_NIF_TERM ar
   if (close(fd)) {
     return enif_make_tuple2(
         env, enif_make_atom(env, "er"),
-        enif_make_string(env, "close2 failed", ERL_NIF_LATIN1));
+        enif_make_string(env, "close3 failed", ERL_NIF_LATIN1));
   }
   return enif_make_atom(env, "ok");
 }

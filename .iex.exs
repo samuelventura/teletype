@@ -1,4 +1,5 @@
 alias Teletype
 alias Teletype.Nif
 alias Teletype.Pts
-alias Teletype.Export
+alias Teletype.Tcp
+alias Teletype.Vt
