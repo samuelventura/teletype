@@ -1,4 +1,4 @@
-# mix run exs/kmpts.exs
+# mix run exs/keymon.exs
 # exit with Ctrl+c
 
 alias Teletype.Pts
