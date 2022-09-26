@@ -42,18 +42,6 @@ NIF_LDFLAGS = -undefined dynamic_lookup -dynamiclib
 endif
 endif
 
-# fixme: unable to compile NIF on macos with zig
-# error(link): undefined reference to symbol '_enif_set_pid_undefined'
-ifeq ($(UNAME),Linux)
-CC =zig cc
-endif
-
-ifeq ($(MIX_TARGET),rpi4)
-#CC =zig cc -target aarch64-linux
-#https://github.com/nerves-project/toolchains/releases
-CC = $(HOME)/.nerves/artifacts/nerves_toolchain_aarch64_nerves_linux_gnu-linux_x86_64-1.6.0/bin/aarch64-nerves-linux-gnu-cc
-endif
-
 .PHONY: all clean post
 
 all: $(VT_TARGET) $(PTS_TARGET) $(PTM_TARGET) $(NIF_TARGET) post
