@@ -28,3 +28,5 @@ teletype-*.tar
 /priv/
 
 /.elixir_ls/
+
+Makefile.*.env

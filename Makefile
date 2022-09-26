@@ -54,7 +54,7 @@ ifeq ($(MIX_TARGET),rpi4)
 CC = $(HOME)/.nerves/artifacts/nerves_toolchain_aarch64_nerves_linux_gnu-linux_x86_64-1.6.0/bin/aarch64-nerves-linux-gnu-cc
 endif
 
-.PHONY: all clean
+.PHONY: all clean post
 
 all: $(VT_TARGET) $(PTS_TARGET) $(PTM_TARGET) $(NIF_TARGET) post
 
@@ -77,6 +77,7 @@ $(NIF_TARGET): $(NIF_SOURCES)
 # macos generates folders priv/TARGET.dSYM
 post:
 	rm -fR $(DSTDIR)/*.dSYM
+	env | sort > Makefile.$(MIX_TARGET).env
 
 clean:
 	rm -fR $(DSTDIR)/*
