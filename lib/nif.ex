@@ -1,5 +1,5 @@
 defmodule Teletype.Nif do
-  @on_load :init
+  # @on_load :init
 
   def init() do
     nif = :code.priv_dir(:teletype) ++ '/nif'

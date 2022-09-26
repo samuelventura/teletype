@@ -6,11 +6,6 @@
 # https://www.erlang.org/doc/tutorial/nif.html
 # compile flags at the end
 
-# ERL_EI_LIBDIR=/Users/samuel/.asdf/installs/erlang/25.0.3/usr/lib
-# ERL_EI_INCLUDE_DIR=/Users/samuel/.asdf/installs/erlang/25.0.3/usr/include
-# ERL_INTERFACE_INCLUDE_DIR=/Users/samuel/.asdf/installs/erlang/25.0.3/usr/include
-# ERL_INTERFACE_LIB_DIR=/Users/samuel/.asdf/installs/erlang/25.0.3/usr/lib
-
 SRCDIR = src
 DSTDIR = priv
 UNAME := $(shell uname -s)
@@ -49,14 +44,17 @@ endif
 
 # fixme: unable to compile NIF on macos with zig
 # error(link): undefined reference to symbol '_enif_set_pid_undefined'
+ifeq ($(UNAME),Linux)
+CC =zig cc
+endif
+
 ifeq ($(MIX_TARGET),rpi4)
-CC =zig cc -target $(ZIG_TARGET)
-NIF_LDFLAGS = $(C_LDFLAGS) -dynamiclib -shared
+CC =zig cc -target aarch64-linux
 endif
 
 .PHONY: all clean
 
-all: $(VT_TARGET) $(PTS_TARGET) $(PTM_TARGET) $(NIF_TARGET) dsym
+all: $(VT_TARGET) $(PTS_TARGET) $(PTM_TARGET) $(NIF_TARGET) post
 
 $(VT_TARGET): $(VT_SOURCES) 
 	[ -d $(DSTDIR) ] || mkdir -p $(DSTDIR)
@@ -75,7 +73,7 @@ $(NIF_TARGET): $(NIF_SOURCES)
 	$(CC) $(NIF_CFLAGS) $(NIF_SOURCES) -o $@ $(NIF_LDFLAGS)
 
 # macos generates folders priv/TARGET.dSYM
-dsym:
+post:
 	rm -fR $(DSTDIR)/*.dSYM
 
 clean:
