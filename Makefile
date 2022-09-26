@@ -3,6 +3,14 @@
 #  mix compile
 #  mix clean
 
+# https://www.erlang.org/doc/tutorial/nif.html
+# compile flags at the end
+
+# ERL_EI_LIBDIR=/Users/samuel/.asdf/installs/erlang/25.0.3/usr/lib
+# ERL_EI_INCLUDE_DIR=/Users/samuel/.asdf/installs/erlang/25.0.3/usr/include
+# ERL_INTERFACE_INCLUDE_DIR=/Users/samuel/.asdf/installs/erlang/25.0.3/usr/include
+# ERL_INTERFACE_LIB_DIR=/Users/samuel/.asdf/installs/erlang/25.0.3/usr/lib
+
 SRCDIR = src
 DSTDIR = priv
 UNAME := $(shell uname -s)
@@ -29,42 +37,46 @@ PTM_LDFLAGS= $(C_LDFLAGS)
 NIF_TARGET = $(DSTDIR)/nif.so
 NIF_SOURCES = $(SRCDIR)/nif.c
 NIF_CFLAGS = $(C_CFLAGS) -I$(ERTS_INCLUDE_DIR) 
-NIF_LDFLAGS= $(C_LDFLAGS) -shared
+NIF_LDFLAGS = $(C_LDFLAGS) -shared
 
 ifeq ($(MIX_TARGET),host)
 ifeq ($(UNAME),Darwin)
-VT_CFLAGS += -D_DARWIN_C_SOURCE
-PTS_CFLAGS += -D_DARWIN_C_SOURCE
 PTM_CFLAGS += -D_DARWIN_C_SOURCE
 NIF_CFLAGS += -D_DARWIN_C_SOURCE
 NIF_LDFLAGS = -undefined dynamic_lookup -dynamiclib
 endif
 endif
 
+# fixme: unable to compile NIF on macos with zig
+# error(link): undefined reference to symbol '_enif_set_pid_undefined'
+ifeq ($(MIX_TARGET),rpi4)
+CC =zig cc -target $(ZIG_TARGET)
+NIF_LDFLAGS = $(C_LDFLAGS) -dynamiclib -shared
+endif
+
 .PHONY: all clean
 
-all: $(VT_TARGET) $(PTS_TARGET) $(PTM_TARGET) $(NIF_TARGET)
+all: $(VT_TARGET) $(PTS_TARGET) $(PTM_TARGET) $(NIF_TARGET) dsym
 
 $(VT_TARGET): $(VT_SOURCES) 
 	[ -d $(DSTDIR) ] || mkdir -p $(DSTDIR)
 	$(CC) $(VT_CFLAGS) $(VT_SOURCES) -o $@ $(VT_LDFLAGS)
-	rm -fR $(DSTDIR)/*.dSYM
 
 $(PTS_TARGET): $(PTS_SOURCES) 
 	[ -d $(DSTDIR) ] || mkdir -p $(DSTDIR)
 	$(CC) $(PTS_CFLAGS) $(PTS_SOURCES) -o $@ $(PTS_LDFLAGS)
-	rm -fR $(DSTDIR)/*.dSYM
 
 $(PTM_TARGET): $(PTM_SOURCES) 
 	[ -d $(DSTDIR) ] || mkdir -p $(DSTDIR)
 	$(CC) $(PTM_CFLAGS) $(PTM_SOURCES) -o $@ $(PTM_LDFLAGS)
-	rm -fR $(DSTDIR)/*.dSYM
 	
 $(NIF_TARGET): $(NIF_SOURCES)
 	[ -d $(DSTDIR) ] || mkdir -p $(DSTDIR)
 	$(CC) $(NIF_CFLAGS) $(NIF_SOURCES) -o $@ $(NIF_LDFLAGS)
-	rm -fR $(DSTDIR)/*.dSYM
 
 # macos generates folders priv/TARGET.dSYM
+dsym:
+	rm -fR $(DSTDIR)/*.dSYM
+
 clean:
 	rm -fR $(DSTDIR)/*
