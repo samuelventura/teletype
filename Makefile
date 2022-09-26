@@ -49,7 +49,9 @@ CC =zig cc
 endif
 
 ifeq ($(MIX_TARGET),rpi4)
-CC =zig cc -target aarch64-linux
+#CC =zig cc -target aarch64-linux
+#https://github.com/nerves-project/toolchains/releases
+CC = $(HOME)/.nerves/artifacts/nerves_toolchain_aarch64_nerves_linux_gnu-linux_x86_64-1.6.0/bin/aarch64-nerves-linux-gnu-cc
 endif
 
 .PHONY: all clean
