@@ -3,6 +3,18 @@ defmodule Teletype.Tcp do
 
   @toms 2_000
 
+  def child_spec(opts \\ []) do
+    {id, opts} = Keyword.pop(opts, :id, __MODULE__)
+
+    %{
+      id: id,
+      start: {__MODULE__, :start_link, [opts]},
+      restart: :permanent,
+      type: :worker,
+      shutdown: 500
+    }
+  end
+
   def start_link(opts \\ []) do
     Task.start_link(fn -> start(opts) end)
   end

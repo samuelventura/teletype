@@ -3,6 +3,9 @@
 #  mix compile
 #  mix clean
 
+# https://www.erlang.org/doc/tutorial/nif.html
+# compile flags at the end
+
 SRCDIR = src
 DSTDIR = priv
 UNAME := $(shell uname -s)
@@ -11,10 +14,10 @@ MIX_TARGET ?= host
 C_CFLAGS = -g -O3 -Werror -pedantic -Wall -Wextra -D_XOPEN_SOURCE=700
 C_LDFLAGS = -fPIC
 
-TTY_TARGET = $(DSTDIR)/tty
-TTY_SOURCES = $(SRCDIR)/tty.c
-TTY_CFLAGS = $(C_CFLAGS)
-TTY_LDFLAGS= $(C_LDFLAGS)
+VT_TARGET = $(DSTDIR)/vt
+VT_SOURCES = $(SRCDIR)/vt.c
+VT_CFLAGS = $(C_CFLAGS)
+VT_LDFLAGS= $(C_LDFLAGS)
 
 PTS_TARGET = $(DSTDIR)/pts
 PTS_SOURCES = $(SRCDIR)/pts.c
@@ -29,42 +32,40 @@ PTM_LDFLAGS= $(C_LDFLAGS)
 NIF_TARGET = $(DSTDIR)/nif.so
 NIF_SOURCES = $(SRCDIR)/nif.c
 NIF_CFLAGS = $(C_CFLAGS) -I$(ERTS_INCLUDE_DIR) 
-NIF_LDFLAGS= $(C_LDFLAGS) -shared
+NIF_LDFLAGS = $(C_LDFLAGS) -shared
 
 ifeq ($(MIX_TARGET),host)
 ifeq ($(UNAME),Darwin)
-PTS_CFLAGS += -D_DARWIN_C_SOURCE
 PTM_CFLAGS += -D_DARWIN_C_SOURCE
-TTY_CFLAGS += -D_DARWIN_C_SOURCE
 NIF_CFLAGS += -D_DARWIN_C_SOURCE
 NIF_LDFLAGS = -undefined dynamic_lookup -dynamiclib
 endif
 endif
 
-.PHONY: all clean
+.PHONY: all clean post
 
-all: $(TTY_TARGET) $(PTS_TARGET) $(PTM_TARGET) $(NIF_TARGET)
+all: $(VT_TARGET) $(PTS_TARGET) $(PTM_TARGET) $(NIF_TARGET) post
+
+$(VT_TARGET): $(VT_SOURCES) 
+	[ -d $(DSTDIR) ] || mkdir -p $(DSTDIR)
+	$(CC) $(VT_CFLAGS) $(VT_SOURCES) -o $@ $(VT_LDFLAGS)
 
 $(PTS_TARGET): $(PTS_SOURCES) 
 	[ -d $(DSTDIR) ] || mkdir -p $(DSTDIR)
 	$(CC) $(PTS_CFLAGS) $(PTS_SOURCES) -o $@ $(PTS_LDFLAGS)
-	rm -fR $(DSTDIR)/*.dSYM
 
 $(PTM_TARGET): $(PTM_SOURCES) 
 	[ -d $(DSTDIR) ] || mkdir -p $(DSTDIR)
 	$(CC) $(PTM_CFLAGS) $(PTM_SOURCES) -o $@ $(PTM_LDFLAGS)
-	rm -fR $(DSTDIR)/*.dSYM
-
-$(TTY_TARGET): $(TTY_SOURCES) 
-	[ -d $(DSTDIR) ] || mkdir -p $(DSTDIR)
-	$(CC) $(TTY_CFLAGS) $(TTY_SOURCES) -o $@ $(TTY_LDFLAGS)
-	rm -fR $(DSTDIR)/*.dSYM
 	
 $(NIF_TARGET): $(NIF_SOURCES)
 	[ -d $(DSTDIR) ] || mkdir -p $(DSTDIR)
 	$(CC) $(NIF_CFLAGS) $(NIF_SOURCES) -o $@ $(NIF_LDFLAGS)
-	rm -fR $(DSTDIR)/*.dSYM
 
 # macos generates folders priv/TARGET.dSYM
+post:
+	rm -fR $(DSTDIR)/*.dSYM
+	env | sort > Makefile.$(MIX_TARGET).env
+
 clean:
 	rm -fR $(DSTDIR)/*

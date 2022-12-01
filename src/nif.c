@@ -59,6 +59,11 @@ static ERL_NIF_TERM nif_ttyraw(ErlNifEnv *env, int argc, const ERL_NIF_TERM argv
   UNUSED(argc);
   UNUSED(argv);
   const char *ttypath = ttyname(0);
+  if (ttypath==NULL) {
+    return enif_make_tuple2(
+        env, enif_make_atom(env, "er"),
+        enif_make_string(env, "ttyname failed", ERL_NIF_LATIN1));
+  }  
   int fd = open(ttypath, O_RDWR|O_NOCTTY);
   if (fd<0) {
     return enif_make_tuple2(
@@ -142,15 +147,22 @@ static ERL_NIF_TERM nif_ttyreset(ErlNifEnv *env, int argc, const ERL_NIF_TERM ar
         enif_make_string(env, "close2 failed", ERL_NIF_LATIN1));
   }
   const char *ttypath = ttyname(0);
+  if (ttypath==NULL) {
+    return enif_make_tuple2(
+        env, enif_make_atom(env, "er"),
+        enif_make_string(env, "ttyname failed", ERL_NIF_LATIN1));
+  }
   fd = open(ttypath, O_RDWR|O_NOCTTY);
   if (fd<0) {
     return enif_make_tuple2(
         env, enif_make_atom(env, "er"),
         enif_make_string(env, "open3 failed", ERL_NIF_LATIN1));
   }
-  //reset mouse configuration
-  const char reset[2] = {(char)0x1b, 'c'};
-  if (write(fd, reset, 2)!=2) {
+  // disable mouse && show cursor
+  // \ec reset
+  // \e[?25h show cursor
+  const char reset[8] = {(char)0x1b, 'c', (char)0x1b, '[', '?', '2', '5', 'h'};
+  if (write(fd, reset, 8)!=8) {
     close(fd);
     return enif_make_tuple2(
         env, enif_make_atom(env, "er"),
@@ -173,7 +185,9 @@ static ERL_NIF_TERM nif_ttyreset(ErlNifEnv *env, int argc, const ERL_NIF_TERM ar
 static ERL_NIF_TERM nif_ttyname(ErlNifEnv *env, int argc, const ERL_NIF_TERM argv[]) {
   UNUSED(argc);
   UNUSED(argv);
-  return enif_make_string(env, ttyname(0), ERL_NIF_LATIN1);
+  const char *ttypath = ttyname(0);
+  ttypath = ttypath == NULL ? "" : ttypath;
+  return enif_make_string(env, ttypath, ERL_NIF_LATIN1);
 }
 
 static ErlNifFunc nif_funcs[] = {
